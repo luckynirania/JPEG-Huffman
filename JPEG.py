@@ -154,14 +154,11 @@ class HuffmanCode:
 
 
 pixel_data_list = import_image_as_mat("cat_32x32.jpg")
-# print(pixel_data_list)
-# print(np.shape(pixel_data_list))
-forward_dct_data = dct("forward", pixel_data_list)
-# print((forward_dct_data))
-quantised_data = quant("normal", forward_dct_data)
-# print(quantised_data)
 
-# print(quant("normal", ))
+forward_dct_data = dct("forward", pixel_data_list)
+
+quantised_data = quant("normal", forward_dct_data)
+
 
 dat = quantised_data.flatten()
 
@@ -182,16 +179,82 @@ huffmanClassObject = HuffmanCode(probabilities)
 P = probabilities
 
 huffman_code = huffmanClassObject.compute_code()
-print(' Char\t|\tHuffman code ')
-print('----------------------')
 
-# for id,char in enumerate(freq):
-#     if huffman_code[id]=='':
-#         print(' %-4r \t|\t%12s' % (char[0], 1))
-#         continue
-#     print(' %-4r \t|\t%12s' % (char[0], huffman_code[id]))
+chart = {}
+# print(' Char\t|\tHuffman code ')
+# print('----------------------')
+
+for id,char in enumerate(freq):
+    if huffman_code[id]=='':
+        # print(' %-4r \t|\t%12s' % (char[0], 1))
+        chart[char[0]] = '1'
+        continue
+    # print(' %-4r \t|\t%12s' % (char[0], huffman_code[id]))
+    chart[char[0]] = huffman_code[id]
 
 huffmanClassObject.characteristics_huffman_code(huffman_code)
 
-print(huffman_code)
+# print(chart)
+huffman_coded_string = str()
+for each in dat:
+    huffman_coded_string += chart[each]
 
+# print(huffman_coded_string)
+
+class Node:
+    def __init__(self, data):
+        self.left = None
+        self.right = None
+        self.data = data
+
+root = Node('dummy')
+
+def insert(data, string):
+    driver = root
+    if len(string) == 1:
+        if string == '1':
+            temp = Node(data)
+            driver.right = temp
+        if string == '0':
+            temp = Node(data)
+            driver.left = temp
+    else:
+        for i in range(len(string) - 1):
+            current_char = string[i]
+            if current_char == '1':
+                if driver.right == None:
+                    temp = Node('dummy')
+                    driver.right = temp
+                driver = driver.right 
+            if current_char == '0':
+                if driver.left == None:
+                    temp = Node('dummy')
+                    driver.left = temp
+                driver = driver.left 
+        if string[-1] == '1':
+            temp = Node(data)
+            driver.right = temp
+        if string[-1] == '0':
+            temp = Node(data)
+            driver.left = temp
+
+for char in chart:
+    # print(char, chart[char])
+    insert(char, chart[char])
+    # print("---------------")
+
+def decodeHuff(root, s):
+    current = root
+    result = ''
+    for code in s:
+        print(result)
+        if int(code) == 0:
+            current = current.left
+        else:
+            current = current.right
+        if current.left == None and current.right == None:
+            result += " " + str(current.data)
+            current = root
+    print(result)
+
+decodeHuff(root, huffman_coded_string)
