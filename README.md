@@ -1,4 +1,5 @@
 # JPEG-Huffman
+    - $ pip install -r requirement.txt
     - usuage "python3 JPEG.py <filename.jpeg>"
     - It writes huffman code table and huffman code string in 'result.txt'
     - Original and Reconstructed images are displayed
