@@ -1,4 +1,4 @@
-from scipy import fft
+from scipy import fftpack
 from PIL import Image
 import math
 import sys
@@ -31,38 +31,23 @@ def import_image_as_mat(name):
     return to_matrix(pixel_data, width)
 
 # DCT
-def dct(mode, data):
-    # print(np.shape(data))
-    if mode == "forward":
-        temp = fft.dct(fft.dct(data.T, norm='ortho').T, norm='ortho')
-        for i in range(len(temp)):
-            for j in range(len(temp)):
-                temp[i][j] = round(temp[i][j])
-                # print(temp[i][j])
-        return temp
-        # return fft.dct(fft.dct(data.T, norm='ortho').T, norm='ortho')
-    else:
-        temp = fft.idct(fft.idct(data.T, norm='ortho').T, norm='ortho')
-        for i in range(len(temp)):
-            for j in range(len(temp)):
-                temp[i][j] = round(temp[i][j])
-                # print(temp[i][j])
-        return temp
-        # return fft.idct(fft.idct(data.T, norm='ortho').T, norm='ortho')
+dct = lambda x: fftpack.dct(x, norm='ortho')
+idct = lambda x: fftpack.idct(x, norm='ortho')
+
 
 # Quantatisation
 def quant(mode, mat):
     global dim
     # print(dim)
     Q = [
-            [16, 11, 10, 16, 24, 40, 51, 61], 
-            [12, 12, 14, 19, 26, 58, 60, 55], 
-            [14, 13, 16, 24, 40, 57, 69, 56], 
-            [14, 17, 22, 29, 51, 87, 80, 62], 
-            [18, 22, 37, 56, 68, 109, 103, 77], 
-            [24, 35, 55, 64, 81, 104, 113, 92], 
-            [49, 64, 78, 87, 103, 121, 120, 101], 
-            [72, 92, 95, 98, 112, 100, 103, 99]
+            [3,2,2,3,5,8,10,12],
+            [2,2,3,4,5,12,12,11],
+            [3,3,3,5,8,11,14,11],
+            [3,3,4,6,10,17,16,12],
+            [4,4,7,11,14,22,21,15],
+            [5,7,11,13,16,12,23,18],
+            [10,13,16,17,21,24,24,21],
+            [14,18,19,20,22,20,20,20]
     ]
     result = []
     if mode == "normal":
@@ -72,7 +57,7 @@ def quant(mode, mat):
             for j in range(0, dim, 8):
                 result[i:i+8, j:j+8] = np.divide(result[i:i+8, j:j+8],Q)
     else:
-        result = to_matrix(mat,dim)
+        result = mat
         for i in range(0, dim, 8):
             for j in range(8):
                 result[i:i+8, j:j+8] = np.multiply(result[i:i+8, j:j+8],Q)
@@ -98,7 +83,7 @@ class HuffmanCode:
 
         mean_length = sum([a*b for a, b in zip(length_of_code, self.probability)])
 
-        print("Average length of the code: %f" % mean_length)
+        print("Average length of the code: %f" % mean_length + "\n")
 
     def compute_code(self):
         num = len(self.probability)
@@ -152,15 +137,15 @@ class HuffmanCode:
         return final_code
 
 
+imagee = sys.argv[1]
+pixel_data_list = import_image_as_mat(imagee) # image into a x a matrix data
 
-pixel_data_list = import_image_as_mat("cat_32x32.jpg")
-
-forward_dct_data = dct("forward", pixel_data_list)
+forward_dct_data = dct(dct(pixel_data_list)) # forward dct
 
 quantised_data = quant("normal", forward_dct_data)
 
 
-dat = quantised_data.flatten()
+dat = forward_dct_data.flatten()
 
 freq = {}
 for c in dat:
@@ -181,25 +166,59 @@ P = probabilities
 huffman_code = huffmanClassObject.compute_code()
 
 chart = {}
-# print(' Char\t|\tHuffman code ')
-# print('----------------------')
+
 
 for id,char in enumerate(freq):
     if huffman_code[id]=='':
-        # print(' %-4r \t|\t%12s' % (char[0], 1))
-        chart[char[0]] = '1'
+        chart[char[0]] = '0'
         continue
-    # print(' %-4r \t|\t%12s' % (char[0], huffman_code[id]))
     chart[char[0]] = huffman_code[id]
 
 huffmanClassObject.characteristics_huffman_code(huffman_code)
 
+for i in chart:
+    if chart[i] == '1':
+        for each in chart:
+            bit_s = chart[each]
+        
+            # replace "1" with "2" 
+            # output : "2020"
+            inverse_s = bit_s.replace('1', '2')
+            
+            # replace "0" with "1" 
+            # output : "2121"
+            inverse_s = inverse_s.replace('0', '1')
+            
+            # replace "0" with "1" 
+            # output : "0101"
+            inverse_s = inverse_s.replace('2', '0')
+
+            chart[each] = inverse_s
+    break
+
+    # print(each, chart[each])
+
+
+f = open("result.txt", "w")
+
 # print(chart)
+f.write(' Char\t|\tHuffman code \n')
+f.write('----------------------\n')
+for each in chart:
+    f.write(' %-4r \t|\t%12s' % (each, chart[each]) + "\n")
+f.write('----------------------\n')
+
 huffman_coded_string = str()
 for each in dat:
+    # print(chart[each])
     huffman_coded_string += chart[each]
 
-# print(huffman_coded_string)
+f.write("Huffman Code " + huffman_coded_string + "\n")
+f.close()
+
+print("Original Image Size = " + str(dim*dim*8) + " bits")
+print("Huffman Code Length = " + str(len(huffman_coded_string)))
+print("Compression Ratio % = " + str(100 - (len(huffman_coded_string)*100/(dim*dim*8))) + " %\n\n" )
 
 class Node:
     def __init__(self, data):
@@ -211,43 +230,48 @@ root = Node('dummy')
 
 def insert(data, string):
     driver = root
-    if len(string) == 1:
-        if string == '1':
-            temp = Node(data)
-            driver.right = temp
-        if string == '0':
-            temp = Node(data)
-            driver.left = temp
-    else:
-        for i in range(len(string) - 1):
-            current_char = string[i]
-            if current_char == '1':
-                if driver.right == None:
-                    temp = Node('dummy')
-                    driver.right = temp
-                driver = driver.right 
-            if current_char == '0':
-                if driver.left == None:
-                    temp = Node('dummy')
-                    driver.left = temp
-                driver = driver.left 
-        if string[-1] == '1':
-            temp = Node(data)
-            driver.right = temp
-        if string[-1] == '0':
-            temp = Node(data)
-            driver.left = temp
+    for i in range(len(string) - 1):
+        current_char = string[i]
+        if current_char == '1':
+            if driver.right == None:
+                temp = Node('dummy')
+                driver.right = temp
+            driver = driver.right 
+        if current_char == '0':
+            if driver.left == None:
+                temp = Node('dummy')
+                driver.left = temp
+            driver = driver.left 
+    if string[-1] == '1':
+        temp = Node(data)
+        driver.right = temp
+    if string[-1] == '0':
+        temp = Node(data)
+        driver.left = temp
 
 for char in chart:
-    # print(char, chart[char])
     insert(char, chart[char])
-    # print("---------------")
+
+count = 0
+
+def traverse(node):
+    global count
+    if node != None:
+        if node.data != 'dummy':
+            count += 1
+        if node.left != None:
+            traverse(node.left)
+        if node.right != None:
+            traverse(node.right)
+
 
 def decodeHuff(root, s):
     current = root
     result = ''
+    # print(s)
+    thing = str()
     for code in s:
-        print(result)
+        thing += code
         if int(code) == 0:
             current = current.left
         else:
@@ -255,6 +279,32 @@ def decodeHuff(root, s):
         if current.left == None and current.right == None:
             result += " " + str(current.data)
             current = root
-    print(result)
+            # print(thing)
+            thing = ''
+        
+    return result
 
-decodeHuff(root, huffman_coded_string)
+decoded_huffman_string = decodeHuff(root, huffman_coded_string)
+decoded_data = decoded_huffman_string.strip().split(' ')
+for i in range(len(decoded_data)):
+    decoded_data[i] = float(decoded_data[i])
+
+print('testing huffman', np.isclose(np.array(decoded_data), np.array(dat)))
+
+dequantised_data = to_matrix(decoded_data,dim)
+
+inverse_dct_data = idct(idct(dequantised_data))
+
+import matplotlib.pyplot as plt 
+from skimage import data, color, io
+
+f1=plt.figure(1)
+io.imshow(pixel_data_list, cmap="gray")
+plt.title("Original Image")
+
+# plt.show()
+f2=plt.figure(2)
+io.imshow(inverse_dct_data, cmap="gray") 
+plt.title("Recontructed Image")
+plt.show()
+
