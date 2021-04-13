@@ -176,32 +176,24 @@ for id,char in enumerate(freq):
 
 huffmanClassObject.characteristics_huffman_code(huffman_code)
 
+
 for i in chart:
-    if chart[i] == '1':
-        for each in chart:
-            bit_s = chart[each]
+#     if chart[i] == '1':
+    for each in chart:
+        bit_s = chart[each]
+        inverse_s = bit_s.replace('1', '2')
         
-            # replace "1" with "2" 
-            # output : "2020"
-            inverse_s = bit_s.replace('1', '2')
-            
-            # replace "0" with "1" 
-            # output : "2121"
-            inverse_s = inverse_s.replace('0', '1')
-            
-            # replace "0" with "1" 
-            # output : "0101"
-            inverse_s = inverse_s.replace('2', '0')
+        inverse_s = inverse_s.replace('0', '1')
+        
+        inverse_s = inverse_s.replace('2', '0')
 
-            chart[each] = inverse_s
-    break
+        chart[each] = inverse_s
+#     break
 
-    # print(each, chart[each])
 
 
 f = open("result.txt", "w")
 
-# print(chart)
 f.write(' Char\t|\tHuffman code \n')
 f.write('----------------------\n')
 for each in chart:
@@ -268,7 +260,7 @@ def traverse(node):
 def decodeHuff(root, s):
     current = root
     result = ''
-    # print(s)
+    
     thing = str()
     for code in s:
         thing += code
@@ -279,7 +271,6 @@ def decodeHuff(root, s):
         if current.left == None and current.right == None:
             result += " " + str(current.data)
             current = root
-            # print(thing)
             thing = ''
         
     return result
@@ -294,6 +285,11 @@ print('testing huffman', np.isclose(np.array(decoded_data), np.array(dat)))
 dequantised_data = to_matrix(decoded_data,dim)
 
 inverse_dct_data = idct(idct(dequantised_data))
+normalise = -1 * min(inverse_dct_data.flatten())
+
+inverse_dct_data = inverse_dct_data + normalise
+
+# inverse_dct_data = dequantised_data
 
 import matplotlib.pyplot as plt 
 from skimage import data, color, io
